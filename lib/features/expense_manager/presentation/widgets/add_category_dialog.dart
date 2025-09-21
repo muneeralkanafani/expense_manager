@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../domain/entites/category.dart';
-import '../provider/expense_provider.dart';
+import '../providers/category_provider.dart';
 
 class AddCategoryDialog extends StatefulWidget {
   final Function(Category) onAdd;
@@ -35,7 +35,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
               name: _nameController.text,
             );
             widget.onAdd(newCategory);
-            Provider.of<ExpenseProvider>(
+            Provider.of<CategoryProvider>(
               context,
               listen: false,
             ).addCategory(newCategory);

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../provider/expense_provider.dart';
+import '../providers/tag_provider.dart';
 import '../widgets/add_tag_dialog.dart';
 
 class TagManagementScreen extends StatelessWidget {
@@ -22,11 +22,11 @@ class TagManagementScreen extends StatelessWidget {
                 builder:
                     (context) => AddTagDialog(
                       onAdd: (newTag) {
-                        Provider.of<ExpenseProvider>(
+                        Provider.of<TagProvider>(
                           context,
                           listen: false,
                         ).addTag(newTag);
-                        Navigator.pop(context);
+                        // Navigator.pop(context);
                       },
                     ),
               );
@@ -35,8 +35,16 @@ class TagManagementScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Consumer<ExpenseProvider>(
+      body: Consumer<TagProvider>(
         builder: (context, provider, child) {
+          if (provider.tags.isEmpty) {
+            return Center(
+              child: Text(
+                "Click the + button to record categories.",
+                style: TextStyle(color: Colors.grey[600], fontSize: 18),
+              ),
+            );
+          }
           return ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: 10),
             itemCount: provider.tags.length,

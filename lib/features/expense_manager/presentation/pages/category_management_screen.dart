@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../provider/expense_provider.dart';
+import '../providers/category_provider.dart';
 import '../widgets/add_category_dialog.dart';
 
 class CategoryManagementScreen extends StatelessWidget {
@@ -22,11 +22,11 @@ class CategoryManagementScreen extends StatelessWidget {
                 builder:
                     (context) => AddCategoryDialog(
                       onAdd: (newCategory) {
-                        Provider.of<ExpenseProvider>(
+                        Provider.of<CategoryProvider>(
                           context,
                           listen: false,
                         ).addCategory(newCategory);
-                        Navigator.pop(context);
+                        // Navigator.pop(context);
                       },
                     ),
               );
@@ -35,8 +35,16 @@ class CategoryManagementScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Consumer<ExpenseProvider>(
+      body: Consumer<CategoryProvider>(
         builder: (context, provider, child) {
+          if (provider.categories.isEmpty) {
+            return Center(
+              child: Text(
+                "Click the + button to record categories.",
+                style: TextStyle(color: Colors.grey[600], fontSize: 18),
+              ),
+            );
+          }
           return ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: 10),
             itemCount: provider.categories.length,

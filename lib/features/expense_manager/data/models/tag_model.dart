@@ -10,4 +10,8 @@ class TagModel extends Tag {
   Map<String, dynamic> toJson() {
     return {'id': id, 'name': name};
   }
+
+  Tag toEntity() => Tag(id: id, name: name);
+
+  static TagModel fromEntity(Tag t) => TagModel(id: t.id, name: t.name);
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../domain/entites/tag.dart';
-import '../provider/expense_provider.dart';
+import '../providers/tag_provider.dart';
 
 class AddTagDialog extends StatefulWidget {
   final Function(Tag) onAdd;
@@ -36,7 +36,7 @@ class _AddTagDialogState extends State<AddTagDialog> {
               name: _nameController.text,
             );
             widget.onAdd(newTag);
-            Provider.of<ExpenseProvider>(context, listen: false).addTag(newTag);
+            Provider.of<TagProvider>(context, listen: false).addTag(newTag);
             _nameController.clear();
             Navigator.of(context).pop();
           },

@@ -1,0 +1,9 @@
+{
+    "id": "1",
+    "amount": 100.5,
+    "categoryId": "food",
+    "payee": "Supermarket",
+    "note": "Weekly groceries",
+    "date": "2025-09-21T12:30:00.000",
+    "tag": "essentials"
+}

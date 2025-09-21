@@ -10,4 +10,9 @@ class CategoryModel extends Category {
   Map<String, dynamic> toJson() {
     return {'id': id, 'name': name};
   }
+
+  Category toEntity() => Category(id: id, name: name);
+
+  static CategoryModel fromEntity(Category c) =>
+      CategoryModel(id: c.id, name: c.name);
 }

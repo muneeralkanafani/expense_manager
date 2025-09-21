@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../domain/entites/expense.dart';
-import '../provider/expense_provider.dart';
-import '../widgets/add_category_dialog.dart';
-import '../widgets/add_tag_dialog.dart';
+import '../providers/category_provider.dart';
+import '../providers/expense_provider.dart';
+import '../providers/tag_provider.dart';
+import '../widgets/category_drop_down.dart';
+import '../widgets/expense_date_field.dart';
+import '../widgets/expense_text_field.dart';
+import '../widgets/save_expense_button.dart';
+import '../widgets/tag_drop_down.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final Expense? initialExpense;
@@ -27,6 +31,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeControllers();
+  }
+
+  void _initializeControllers() {
     _amountController = TextEditingController(
       text: widget.initialExpense?.amount.toString() ?? '',
     );
@@ -43,52 +51,86 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final expenseProvider = Provider.of<ExpenseProvider>(context);
+    final tagProvider = Provider.of<TagProvider>(context);
+    final categoryProvider = Provider.of<CategoryProvider>(context);
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.initialExpense == null ? 'Add Expense' : 'Edit Expense',
-        ),
-        backgroundColor: Colors.deepPurple[800],
-        foregroundColor: Colors.white,
+      appBar: _buildAppBar(),
+      body: _buildBody(categoryProvider, tagProvider),
+      bottomNavigationBar: _buildSaveButton(),
+    );
+  }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: Text(
+        widget.initialExpense == null ? 'Add Expense' : 'Edit Expense',
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            buildTextField(
-              _amountController,
-              'Amount',
-              TextInputType.numberWithOptions(decimal: true),
-            ),
-            buildTextField(_payeeController, 'Payee', TextInputType.text),
-            buildTextField(_noteController, 'note', TextInputType.text),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: buildDateField(_selectedDate),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: buildCategoryDropdown(expenseProvider),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: buildTagDropdown(expenseProvider),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.all(16),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepPurple,
-            foregroundColor: Colors.white,
-            minimumSize: Size(double.infinity, 50),
+      backgroundColor: Colors.deepPurple,
+      foregroundColor: Colors.white,
+    );
+  }
+
+  Widget _buildBody(
+    CategoryProvider categoryProvider,
+    TagProvider tagProvider,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          ExpenseTextField(
+            controller: _amountController,
+            hintText: 'Amount',
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
-          onPressed: _saveExpense,
-          child: Text('Save Expense'),
-        ),
+          ExpenseTextField(
+            controller: _payeeController,
+            hintText: 'Payee',
+            keyboardType: TextInputType.text,
+          ),
+          ExpenseTextField(
+            controller: _noteController,
+            hintText: 'Note',
+            keyboardType: TextInputType.text,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: ExpenseDateField(
+              selectedDate: _selectedDate,
+              onDateChanged:
+                  (newDate) => setState(() => _selectedDate = newDate),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: CategoryDropdown(
+              selectedCategoryId: _selectedCategoryId,
+              onCategoryChanged:
+                  (newValue) => setState(() => _selectedCategoryId = newValue),
+              categoryProvider: categoryProvider,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: TagDropdown(
+              selectedTagId: _selectedTagId,
+              onTagChanged:
+                  (newValue) => setState(() => _selectedTagId = newValue),
+              tagProvider: tagProvider,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: SaveExpenseButton(
+        onPressed: _saveExpense,
+        isEditing: widget.initialExpense != null,
       ),
     );
   }
@@ -130,161 +172,5 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       listen: false,
     ).addOrUpdateExpense(expense);
     Navigator.pop(context);
-  }
-
-  Widget buildTextField(
-    TextEditingController controller,
-    String hint,
-    TextInputType type,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey, width: 1.0),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey, width: 1.0),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.deepPurple, width: 2),
-          ),
-        ),
-        keyboardType: type,
-      ),
-    );
-  }
-
-  Widget buildDateField(DateTime selectedDate) {
-    return GestureDetector(
-      onTap: () async {
-        final DateTime? picked = await showDatePicker(
-          context: context,
-          initialDate: selectedDate,
-          firstDate: DateTime(2000),
-          lastDate: DateTime(2100),
-        );
-        if (picked != null && picked != selectedDate) {
-          setState(() {
-            _selectedDate = picked;
-          });
-        }
-      },
-      child: InputDecorator(
-        decoration: InputDecoration(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(width: 1.0, color: Colors.grey),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text("Date: ${DateFormat('yyyy-MM-dd').format(selectedDate)}"),
-            Icon(Icons.calendar_today),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildCategoryDropdown(ExpenseProvider provider) {
-    return DropdownButtonFormField<String>(
-      value: _selectedCategoryId,
-      onChanged: (newValue) {
-        if (newValue == 'New') {
-          showDialog(
-            context: context,
-            builder:
-                (context) => AddCategoryDialog(
-                  onAdd: (newCategory) {
-                    setState(() {
-                      _selectedCategoryId = newCategory.id;
-                      provider.addCategory(newCategory);
-                    });
-                  },
-                ),
-          );
-        } else {
-          setState(() => _selectedCategoryId = newValue);
-        }
-      },
-      items:
-          provider.categories.map<DropdownMenuItem<String>>((category) {
-              return DropdownMenuItem<String>(
-                value: category.id,
-                child: Text(category.name),
-              );
-            }).toList()
-            ..add(
-              DropdownMenuItem(value: "New", child: Text("Add New Category")),
-            ),
-      decoration: InputDecoration(
-        hintText: 'Category',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey, width: 1.0),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey, width: 1.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.deepPurple, width: 2),
-        ),
-      ),
-    );
-  }
-
-  Widget buildTagDropdown(ExpenseProvider provider) {
-    return DropdownButtonFormField<String>(
-      value: _selectedTagId,
-      onChanged: (newValue) {
-        if (newValue == 'New') {
-          showDialog(
-            context: context,
-            builder:
-                (context) => AddTagDialog(
-                  onAdd: (newTag) {
-                    provider.addTag(newTag);
-                    setState(() => _selectedTagId = newTag.id);
-                  },
-                ),
-          );
-        } else {
-          setState(() => _selectedTagId = newValue);
-        }
-      },
-      items:
-          provider.tags.map<DropdownMenuItem<String>>((tag) {
-              return DropdownMenuItem<String>(
-                value: tag.id,
-                child: Text(tag.name),
-              );
-            }).toList()
-            ..add(DropdownMenuItem(value: "New", child: Text("Add New Tag"))),
-      decoration: InputDecoration(
-        hintText: 'Tag',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey, width: 1.0),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey, width: 1.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.deepPurple, width: 2),
-        ),
-      ),
-    );
   }
 }

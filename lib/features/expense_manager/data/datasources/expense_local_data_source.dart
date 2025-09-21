@@ -18,15 +18,15 @@ abstract class ExpenseLocalDataSource {
 
 class ExpenseLocalDataSourceImpl implements ExpenseLocalDataSource {
   final LocalStorage storage;
-  final String storageKey;
+  final String expenseStorageKey;
 
   ExpenseLocalDataSourceImpl({
     required this.storage,
-    this.storageKey = 'expenses',
+    this.expenseStorageKey = 'expenses',
   });
 
-  Future<List<dynamic>> _rawList() async {
-    final stored = storage.getItem(storageKey);
+  Future<List<dynamic>> _rawList(String key) async {
+    final stored = storage.getItem(key);
     if (stored == null) return [];
     final decoded = jsonDecode(stored) as List;
     return decoded.cast<dynamic>();
@@ -34,25 +34,26 @@ class ExpenseLocalDataSourceImpl implements ExpenseLocalDataSource {
 
   @override
   Future<List<ExpenseModel>> getExpenses() async {
-    final raw = await _rawList();
+    final raw = await _rawList(expenseStorageKey);
     return raw
         .map((e) => ExpenseModel.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
-  Future<void> _write(List<ExpenseModel> models) async {
+  Future<void> _writeExpense(List<ExpenseModel> models) async {
     final encoded = jsonEncode(models.map((m) => m.toJson()).toList());
-    storage.setItem(storageKey, encoded);
+    storage.setItem(expenseStorageKey, encoded);
   }
 
   @override
-  Future<void> cacheExpenses(List<ExpenseModel> expenses) => _write(expenses);
+  Future<void> cacheExpenses(List<ExpenseModel> expenses) =>
+      _writeExpense(expenses);
 
   @override
   Future<void> addExpense(ExpenseModel expense) async {
     final current = await getExpenses();
     current.add(expense);
-    await _write(current);
+    await _writeExpense(current);
   }
 
   @override
@@ -60,13 +61,13 @@ class ExpenseLocalDataSourceImpl implements ExpenseLocalDataSource {
     final current = await getExpenses();
     final idx = current.indexWhere((e) => e.id == expense.id);
     if (idx != -1) current[idx] = expense;
-    await _write(current);
+    await _writeExpense(current);
   }
 
   @override
   Future<void> deleteExpense(String id) async {
     final current = await getExpenses();
     current.removeWhere((e) => e.id == id);
-    await _write(current);
+    await _writeExpense(current);
   }
 }
